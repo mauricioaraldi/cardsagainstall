@@ -1,4 +1,5 @@
-import { io } from '../../../node_modules/socket.io/client-dist/socket.io.js';
+// @ts-nocheck
+// import { io, Socket } from 'socket.io-client';
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
@@ -9,35 +10,45 @@ import '../CaaMenu/CaaMenu';
 export class CaaRoot extends LitElement {
   @property({ type: String }) title = 'Cards Against All';
   @property({ type: String }) currentPage = 'menu';
+  @property({ type: String }) playerName = '';
+  @property({ type: Array }) hand = [];
 
-  socket = io('ws://localhost:3000');
-  static styles = css``;
-
-  connectedCallback() {
-    super.connectedCallback()
-
-    this.socket.on('message', (arg: any) => {
-      console.log('Received message:', arg);
-    });
-
-    this.socket.emit('test', 'THIS IS THE TEST');
-  }
+  // socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('ws://localhost:3000');
+  socket: any = io('ws://localhost:3000');
+  static styles = css`
+    input {
+      margin-bottom: 16px;
+    }
+  `;
 
   onNavigate(ev: any) {
     this.currentPage = ev.detail;
   }
 
   onStart() {
+    this.socket.emit('playerName', this.playerName);
+
+    this.socket.on('hand', cards => {
+      this.hand = cards;
+    });
+
     this.currentPage = 'game';
   }
 
   renderPage() {
     switch (this.currentPage) {
       case 'game':
-        return html`<caa-game @navigate=${this.onNavigate} />`;
+        return html`<caa-game .hand=${this.hand} @navigate=${this.onNavigate} />`;
 
       default:
         return html`
+          <input
+            type="text"
+            name="name"
+            placeholder="Your name"
+            value="${this.playerName}"
+            @change=${e => (this.playerName = e.target.value)}
+          />
           <caa-menu @navigate=${this.onNavigate} @start=${this.onStart} />
         `;
     }
