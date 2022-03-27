@@ -12,14 +12,22 @@ export class CaaGame extends LitElement {
   @property({ type: Boolean }) pickingAnswer: boolean = false;
   @property({ type: Array }) players: Player[] = [];
   @property({ type: Array }) answers: any[] | null = null;
+  @property({ type: Boolean }) master: boolean = false;
 
   static styles = css`
+    .hidden {
+      display: none;
+    }
+
     #players {
       background-color: #ffffff;
       border: 1px solid #000000;
+      font-size: 10px;
       list-style-type: none;
+      margin: 0;
+      max-height: 50px;
+      overflow: auto;
       padding: 8px;
-      position: absolute;
       right: 0;
       text-align: left;
     }
@@ -42,19 +50,33 @@ export class CaaGame extends LitElement {
       padding-left: 4px;
     }
 
+    #answers-container {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: center;
+    }
+
     #answers {
       display: flex;
-      justify-content: space-around;
+      overflow: auto;
+    }
+
+    #answers > div:not(:last-child) {
+      margin-right: 8px;
     }
 
     h2 {
       display: block;
-      font-size: 14px;
+      font-size: 12px;
+      margin: 4px 0;
     }
 
     #hand-container {
       bottom: 0;
+      height: 150px;
       left: 0;
+      overflow: auto;
       position: absolute;
       right: 0;
     }
@@ -75,6 +97,30 @@ export class CaaGame extends LitElement {
 
     .card-container:not(:last-child) {
       margin-right: 8px;
+    }
+
+    @media (min-width: 320px) {
+      #hand-container {
+        height: 250px;
+      }
+    }
+
+    @media (min-width: 640px) {
+      #main-container {
+        display: flex;
+        flex-direction: row-reverse;
+      }
+
+      #players {
+        font-size: 16px;
+        max-height: 300px;
+        min-width: 180px;
+      }
+
+      #answers-container {
+        overflow: auto;
+        padding: 8px;
+      }
     }
   `;
 
@@ -181,14 +227,16 @@ export class CaaGame extends LitElement {
     return this.answers.map(answer => {
       if (!answer.length) {
         return html`
-          <caa-card .hidden=${true} @click=${this.onRevealAnswer}></caa-card>
+          <div>
+            <caa-card .hidden=${true} @click=${this.onRevealAnswer}></caa-card>
+          </div>
         `;
       }
 
       const cards = answer.map(
         (card: Card) =>
           html`
-            <caa-card 
+            <caa-card
               .text=${card.text}
               .version=${card.version}
               @click=${() => this.onPickAnswer(card)}
@@ -201,15 +249,27 @@ export class CaaGame extends LitElement {
   }
 
   renderAnswerTitle() {
-    if (!this.answers) {
-      return html``;
+    if (!this.master && !this.selectedCards.length && !this.cardsLocked) {
+      return html`Pick your answer`;
     }
 
-    if (this.answers && !this.pickingAnswer) {
+    if (!this.master && this.selectedCards.length && !this.cardsLocked) {
+      return html`Lock your answer`;
+    }
+
+    if (!this.master && this.cardsLocked) {
+      return html`Wait for master to choose an answer`;
+    }
+
+    if (this.master && !this.answers) {
+      return html`Wait for players to pick their answers`;
+    }
+
+    if (this.master && !this.pickingAnswer) {
       return `Click to reveal answers`;
     }
 
-    if (this.answers && !this.pickingAnswer) {
+    if (this.master) {
       return `Choose an answer`;
     }
   }
@@ -223,18 +283,24 @@ export class CaaGame extends LitElement {
           .version=${this.question?.version}
         ></caa-card>
 
-        <h2>${this.renderAnswerTitle()}</h2>
-        <div id="answers">${this.renderAnswers()}</div>
-
-        <ul id="players">
-          ${this.renderPlayers()}
-        </ul>
-
-        <div id="hand-container">
-          ${this.renderChooseButton()}
-          <ul id="hand">
-            ${this.renderHand()}
+        <div id="main-container">
+          <ul id="players">
+            ${this.renderPlayers()}
           </ul>
+
+          <div id="answers-container">
+            <h2>${this.renderAnswerTitle()}</h2>
+            <div id="answers">${this.renderAnswers()}</div>
+          </div>
+        </div>
+
+        <div class="${this.cardsLocked ? 'hidden' : ''}">
+          ${this.renderChooseButton()}
+          <div id="hand-container">
+            <ul id="hand">
+              ${this.renderHand()}
+            </ul>
+          </div>
         </div>
       </main>
     `;

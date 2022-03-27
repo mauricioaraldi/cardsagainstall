@@ -15,8 +15,10 @@ export class CaaRoot extends LitElement {
   @property({ type: Object }) question?: Card;
   @property({ type: Boolean }) cardsLocked: boolean = false;
   @property({ type: Array }) players: Player[] = [];
-  @property({ type: Array }) answers: any[] = [];
+  @property({ type: Array }) answers: any[] | null = null;
   @property({ type: Boolean }) pickingAnswer: boolean = false;
+  @property({ type: Boolean }) master: boolean = false;
+
 
   // socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('ws://localhost:3000');
   socket: any = io('ws://localhost:3000');
@@ -65,7 +67,10 @@ export class CaaRoot extends LitElement {
       this.requestUpdate();
     });
 
-    this.socket.on('master', isMaster => this.cardsLocked = isMaster);
+    this.socket.on('master', isMaster => {
+      this.cardsLocked = isMaster;
+      this.master = isMaster;
+    });
 
     this.socket.on('pickAnswer', isPickingAnswer => this.pickingAnswer = isPickingAnswer);
   }
@@ -80,6 +85,7 @@ export class CaaRoot extends LitElement {
           .cardsLocked=${this.cardsLocked}
           .answers=${this.answers}
           .pickingAnswer=${this.pickingAnswer}
+          .master=${this.master}
           @navigate=${this.onNavigate}
           @chooseCards=${this.onChooseCards}
           @revealAnswer=${this.onRevealAnswer}
@@ -88,6 +94,7 @@ export class CaaRoot extends LitElement {
 
       default:
         return html`
+          <h1>${this.title}</h1>
           <input
             type="text"
             name="name"
@@ -102,8 +109,6 @@ export class CaaRoot extends LitElement {
 
   render() {
     return html`
-      <h1>${this.title}</h1>
-
       ${this.renderPage()}
     `;
   }

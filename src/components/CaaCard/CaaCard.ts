@@ -16,8 +16,7 @@ export class CaaCard extends LitElement {
       border: 1px solid #000000;
       cursor: pointer;
       display: flex;
-      font-size: 18px;
-      min-height: 80px;
+      font-size: 12px;
       flex-direction: column;
       justify-content: space-between;
       padding: 8px;
@@ -36,7 +35,7 @@ export class CaaCard extends LitElement {
     }
 
     .card > span:last-child {
-      font-size: 8px;
+      font-size: 6px;
     }
 
     .selected-as {
@@ -46,6 +45,17 @@ export class CaaCard extends LitElement {
       padding: 2px 6px;
       position: absolute;
       top: 0;
+    }
+
+    @media (min-width: 320px) {
+      .card {
+        font-size: 18px;
+        min-height: 80px;
+      }
+
+      .card > span:last-child {
+        font-size: 8px;
+      }
     }
   `;
 
