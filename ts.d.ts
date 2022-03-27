@@ -17,7 +17,21 @@ interface SocketData {
 }
 
 interface Card {
-  id: string,
-  text: string,
-  version: string,
+  id: string;
+  selectedAs?: number;
+  text: string;
+  version: string;
+}
+
+interface Question {
+  id: string;
+  pick: number;
+  text: string;
+  version: string;
+}
+
+interface Player {
+  name: string;
+  score: number;
+  status: string;
 }
