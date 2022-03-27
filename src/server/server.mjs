@@ -83,7 +83,7 @@ function suffleDeck(deck) {
 
 console.log(process.env.FRONT_END_ADDRESS);
 
-const io = new Server(3000, {
+const io = new Server(process.env.PORT, {
   cors: {
     origin: process.env.FRONT_END_ADDRESS,
     methods: ['GET', 'POST'],
