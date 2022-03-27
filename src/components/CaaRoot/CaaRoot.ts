@@ -21,7 +21,7 @@ export class CaaRoot extends LitElement {
 
 
   // socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('ws://localhost:3000');
-  socket: any = io(process.env.BACK_END_ADDRESS);
+  socket: any = io('@@ENV_BACK_END_ADDRESS@@');
   static styles = css`
     input {
       margin-bottom: 16px;
@@ -33,8 +33,6 @@ export class CaaRoot extends LitElement {
   }
 
   onStart() {
-    console.log(process, process.env);
-
     this.socket.emit('playerName', this.playerName);
 
     this.socket.on('hand', cards => {

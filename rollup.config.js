@@ -5,7 +5,8 @@ import { importMetaAssets } from '@web/rollup-plugin-import-meta-assets';
 import { terser } from 'rollup-plugin-terser';
 import { generateSW } from 'rollup-plugin-workbox';
 import path from 'path';
-import dotenv from 'rollup-plugin-dotenv';
+import replace from 'rollup-plugin-replace';
+import 'dotenv/config';
 
 export default {
   input: 'index.html',
@@ -19,7 +20,10 @@ export default {
   preserveEntrySignatures: false,
 
   plugins: [
-    dotenv(),
+    replace({
+      ENV_BACK_END_ADDRESS: 'ws://localhost:3000',
+      delimiters: ['@@', '@@'],
+    }),
     /** Enable using HTML as rollup entrypoint */
     html({
       minify: true,
