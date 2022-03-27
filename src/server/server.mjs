@@ -4,6 +4,8 @@ import { Server } from 'socket.io';
 
 import { onChooseCards, onPickAnswer, onPlayerName, onRevealAnswer } from './gameSocket.mjs';
 
+console.log('STARTING SERVER');
+
 let GAMES = {
   1: {
     players: {},
