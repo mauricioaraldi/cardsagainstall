@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import fs from 'fs';
 import { Server } from 'socket.io';
 
@@ -69,9 +70,11 @@ function suffleDeck(deck) {
   return deck;
 }
 
+console.log(process.env.FRONT_END_ADDRESS);
+
 const io = new Server(3000, {
   cors: {
-    origin: 'http://localhost:8000',
+    origin: process.env.FRONT_END_ADDRESS,
     methods: ['GET', 'POST'],
   },
 });
@@ -115,7 +118,7 @@ io.on('connection', socket => {
 //   GAMES = JSON.parse(data);
 // });
 
-fs.readFile('../../cah_p.csv', 'UTF-8', (err, data) => {
+fs.readFile('./cah_p.csv', 'UTF-8', (err, data) => {
   if (err) {
     return console.error(err);
   }
@@ -133,7 +136,7 @@ fs.readFile('../../cah_p.csv', 'UTF-8', (err, data) => {
   GAMES[1].currentQuestion = GAMES[1].decks.questions.unused.pop();
 });
 
-fs.readFile('../../cah_b.csv', 'UTF-8', (err, data) => {
+fs.readFile('./cah_b.csv', 'UTF-8', (err, data) => {
   if (err) {
     return console.error(err);
   }
