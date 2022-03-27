@@ -5,7 +5,7 @@ import { importMetaAssets } from '@web/rollup-plugin-import-meta-assets';
 import { terser } from 'rollup-plugin-terser';
 import { generateSW } from 'rollup-plugin-workbox';
 import path from 'path';
-import 'dotenv/config';
+import dotenv from 'rollup-plugin-dotenv';
 
 export default {
   input: 'index.html',
@@ -19,6 +19,7 @@ export default {
   preserveEntrySignatures: false,
 
   plugins: [
+    dotenv(),
     /** Enable using HTML as rollup entrypoint */
     html({
       minify: true,
