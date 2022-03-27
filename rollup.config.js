@@ -21,7 +21,7 @@ export default {
 
   plugins: [
     replace({
-      ENV_BACK_END_ADDRESS: 'ws://localhost:3000',
+      ENV_BACK_END_ADDRESS: process.env.BACK_END_ADDRESS,
       delimiters: ['@@', '@@'],
     }),
     /** Enable using HTML as rollup entrypoint */
