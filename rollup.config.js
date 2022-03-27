@@ -6,7 +6,9 @@ import { terser } from 'rollup-plugin-terser';
 import { generateSW } from 'rollup-plugin-workbox';
 import path from 'path';
 import replace from 'rollup-plugin-replace';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export default {
   input: 'index.html',
