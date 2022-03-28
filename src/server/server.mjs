@@ -1,8 +1,18 @@
+import 'dotenv/config';
 import fs from 'fs';
 import { Server } from 'socket.io';
+import fetch from 'node-fetch';
 
-import { onChooseCards, onPickAnswer, onPlayerName, onRevealAnswer } from './gameSocket.mjs';
+import {
+  onChooseCards,
+  onPickAnswer,
+  onPlayerName,
+  onRevealAnswer,
+} from './gameSocket.mjs';
 
+console.log('STARTING SERVER');
+
+let PASTEBIN_USER_KEY = null;
 let GAMES = {
   1: {
     players: {},
@@ -61,7 +71,9 @@ function shuffle(array) {
     currentIndex--;
 
     [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]];
+      array[randomIndex],
+      array[currentIndex],
+    ];
   }
 }
 
@@ -69,9 +81,11 @@ function suffleDeck(deck) {
   return deck;
 }
 
-const io = new Server(3000, {
+console.log(process.env.FRONT_END_ADDRESS);
+
+const io = new Server(process.env.PORT, {
   cors: {
-    origin: 'http://localhost:8000',
+    origin: process.env.FRONT_END_ADDRESS,
     methods: ['GET', 'POST'],
   },
 });
@@ -84,7 +98,9 @@ io.on('connection', socket => {
     version: GAMES[1].currentQuestion.version,
   });
 
-  socket.on('playerName', userName => onPlayerName(io, socket, GAMES[1], userName));
+  socket.on('playerName', userName =>
+    onPlayerName(io, socket, GAMES[1], userName)
+  );
 
   socket.on('chooseCards', cards => onChooseCards(io, socket, GAMES[1], cards));
 
@@ -114,37 +130,61 @@ io.on('connection', socket => {
 
 //   GAMES = JSON.parse(data);
 // });
-
-fs.readFile('../../cah_p.csv', 'UTF-8', (err, data) => {
-  if (err) {
-    return console.error(err);
-  }
-
-  const deckId = DECK_ID_TRACKER++;
-
-  GAMES[1].decks.questions = {
-    deckId,
-    unused: CSVToDeck(data, deckId),
-    used: [],
-  };
-
-  shuffle(GAMES[1].decks.questions.unused);
-
-  GAMES[1].currentQuestion = GAMES[1].decks.questions.unused.pop();
+//
+const pastebinUserResponse = await fetch('https://pastebin.com/api/api_login.php', {
+  method: 'POST',
+  body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_name=${process.env.PASTEBIN_USERNAME}&api_user_password=${process.env.PASTEBIN_PASSWORD}`,
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 });
+PASTEBIN_USER_KEY = await pastebinUserResponse.text();
 
-fs.readFile('../../cah_b.csv', 'UTF-8', (err, data) => {
-  if (err) {
-    return console.error(err);
-  }
-
-  const deckId = DECK_ID_TRACKER++;
-
-  GAMES[1].decks.answers = {
-    deckId,
-    unused: CSVToDeck(data, deckId),
-    used: [],
-  };
-
-  shuffle(GAMES[1].decks.answers.unused);
+const pastebinQuestionsResponse = await fetch('https://pastebin.com/api/api_raw.php', {
+  method: 'POST',
+  body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_key=${PASTEBIN_USER_KEY}&api_paste_key=${process.env.PASTEBIN_QUESTIONS_KEY}&api_option=show_paste`,
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 });
+const pastebinQuestions = await pastebinQuestionsResponse.text();
+
+const pastebinAnswersResponse = await fetch('https://pastebin.com/api/api_raw.php', {
+  method: 'POST',
+  body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_key=${PASTEBIN_USER_KEY}&api_paste_key=${process.env.PASTEBIN_ANSWERS_KEY}&api_option=show_paste`,
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+});
+const pastebinAnswers = await pastebinAnswersResponse.text();
+
+// fs.readFile(process.env.QUESTIONS_DECK, 'UTF-8', (err, data) => {
+//   if (err) {
+//     return console.error(err);
+//   }
+
+const questionDeckId = DECK_ID_TRACKER++;
+
+GAMES[1].decks.questions = {
+  deckId: questionDeckId,
+  unused: CSVToDeck(pastebinQuestions, questionDeckId),
+  used: [],
+};
+
+shuffle(GAMES[1].decks.questions.unused);
+
+GAMES[1].currentQuestion = GAMES[1].decks.questions.unused.pop();
+// });
+
+// fs.readFile(process.env.ANSWERS_DECK, 'UTF-8', (err, data) => {
+//   if (err) {
+//     return console.error(err);
+//   }
+
+const answerDeckId = DECK_ID_TRACKER++;
+
+GAMES[1].decks.answers = {
+  deckId: answerDeckId,
+  unused: CSVToDeck(pastebinAnswers, answerDeckId),
+  used: [],
+};
+
+shuffle(GAMES[1].decks.answers.unused);
+// });
+
+console.log('ALL DATA LOADED');
+

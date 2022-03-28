@@ -19,12 +19,16 @@ export class CaaRoot extends LitElement {
   @property({ type: Boolean }) pickingAnswer: boolean = false;
   @property({ type: Boolean }) master: boolean = false;
 
-
   // socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('ws://localhost:3000');
-  socket: any = io('ws://localhost:3000');
+  socket: any = io('@@ENV_BACK_END_ADDRESS@@');
   static styles = css`
     input {
       margin-bottom: 16px;
+    }
+
+    #upload-menu {
+      display: none;
+      margin-top: 200px;
     }
   `;
 
@@ -43,7 +47,10 @@ export class CaaRoot extends LitElement {
   }
 
   onChooseCards(ev) {
-    this.socket.emit('chooseCards', ev.detail.map(card => card.id));
+    this.socket.emit(
+      'chooseCards',
+      ev.detail.map(card => card.id)
+    );
   }
 
   onRevealAnswer() {
@@ -55,12 +62,12 @@ export class CaaRoot extends LitElement {
   }
 
   connectedCallback() {
-    super.connectedCallback()
-    this.socket.on('question', question => this.question = question);
+    super.connectedCallback();
+    this.socket.on('question', question => (this.question = question));
 
-    this.socket.on('cardsLocked', isLocked => this.cardsLocked = isLocked);
+    this.socket.on('cardsLocked', isLocked => (this.cardsLocked = isLocked));
 
-    this.socket.on('players', players => this.players = players);
+    this.socket.on('players', players => (this.players = players));
 
     this.socket.on('answers', answers => {
       this.answers = answers;
@@ -72,7 +79,10 @@ export class CaaRoot extends LitElement {
       this.master = isMaster;
     });
 
-    this.socket.on('pickAnswer', isPickingAnswer => this.pickingAnswer = isPickingAnswer);
+    this.socket.on(
+      'pickAnswer',
+      isPickingAnswer => (this.pickingAnswer = isPickingAnswer)
+    );
   }
 
   renderPage() {
@@ -102,14 +112,22 @@ export class CaaRoot extends LitElement {
             value="${this.playerName}"
             @change=${e => (this.playerName = e.target.value)}
           />
-          <caa-menu @navigate=${this.onNavigate} @start=${this.onStart}></caa-menu>
+          <caa-menu
+            @navigate=${this.onNavigate}
+            @start=${this.onStart}
+          ></caa-menu>
+
+          <div id="upload-menu">
+            <label>
+              <span>Upload deck</span>
+              <input type="file" />
+            </label>
+          </div>
         `;
     }
   }
 
   render() {
-    return html`
-      ${this.renderPage()}
-    `;
+    return html` ${this.renderPage()} `;
   }
 }
