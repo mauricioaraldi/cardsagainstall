@@ -71,8 +71,8 @@ export const onChooseCards = (io, socket, game, cardIds) => {
   }
 
   const player = game.players[socket.id];
-  const playerHasCards = !cardIds.some(cardId =>
-    !player.hand.find(card => card.id === cardId)
+  const playerHasCards = !cardIds.some(
+    cardId => !player.hand.find(card => card.id === cardId)
   );
 
   if (!playerHasCards) {
@@ -173,4 +173,37 @@ export const onPickAnswer = (io, socket, game, cardId) => {
   game.master[0].socket.emit('master', true);
 
   io.emit('players', getPlayersWithStatus(game));
+};
+
+export const onResetGames = (io, games) => {
+  console.log('clear games');
+
+  Object.values(games).forEach(game => {
+    console.log(game.players);
+
+    game.decks.answers.unused.push(...game.decks.answers.used);
+    Object.values(game.players).forEach(player => {
+      game.decks.answers.unused.push(...player.hand);
+      game.decks.answers.unused.push(...player.choice.cards);
+    });
+
+    game.decks.questions.unused.push(...game.decks.questions.used);
+    game.decks.questions.unused.push(game.currentQuestion);
+
+    game = {
+      players: {},
+      currentQuestion: null,
+      master: [],
+      decks: {
+        answers: {
+          unused: game.decks.answers.unused,
+          used: [],
+        },
+        questions: {
+          unused: game.decks.questions.unused,
+          used: [],
+        },
+      },
+    };
+  });
 };
