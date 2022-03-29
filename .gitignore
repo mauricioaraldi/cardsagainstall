@@ -25,5 +25,5 @@ storybook-static
 custom-elements.json
 
 games.json
-cah_*
+*_deck.csv*
 .env

@@ -20,7 +20,12 @@ export class CaaRoot extends LitElement {
   @property({ type: Boolean }) master: boolean = false;
 
   // socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('ws://localhost:3000');
-  socket: any = io('@@ENV_BACK_END_ADDRESS@@');
+  address: string = '@@ENV_BACK_END_ADDRESS@@';
+  socket: any = io(
+    this.address.includes('@@')
+      ? `http://${location.hostname}:3000`
+      : this.address
+  );
   static styles = css`
     input {
       margin-bottom: 16px;
@@ -29,6 +34,10 @@ export class CaaRoot extends LitElement {
     #upload-menu {
       display: none;
       margin-top: 200px;
+    }
+
+    #other-options {
+      margin-top: 100px;
     }
   `;
 
@@ -59,6 +68,10 @@ export class CaaRoot extends LitElement {
 
   onPickAnswer(ev) {
     this.socket.emit('pickAnswer', ev.detail.id);
+  }
+
+  onReset(){
+    this.socket.emit('resetGames');
   }
 
   connectedCallback() {
@@ -122,6 +135,10 @@ export class CaaRoot extends LitElement {
               <span>Upload deck</span>
               <input type="file" />
             </label>
+          </div>
+
+          <div id="other-options">
+            <button @click=${this.onReset}>Reset games</button>
           </div>
         `;
     }

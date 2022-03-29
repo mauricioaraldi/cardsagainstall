@@ -7,8 +7,11 @@ import {
   onChooseCards,
   onPickAnswer,
   onPlayerName,
+  onResetGames,
   onRevealAnswer,
 } from './gameSocket.mjs';
+
+import { shuffle } from './utils.mjs';
 
 console.log('STARTING SERVER');
 
@@ -62,30 +65,13 @@ function CSVToDeck(data, deckId) {
   });
 }
 
-function shuffle(array) {
-  let currentIndex = array.length;
-  let randomIndex;
-
-  while (currentIndex != 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex],
-      array[currentIndex],
-    ];
-  }
-}
-
 function suffleDeck(deck) {
   return deck;
 }
 
-console.log(process.env.FRONT_END_ADDRESS);
-
 const io = new Server(process.env.PORT, {
   cors: {
-    origin: process.env.FRONT_END_ADDRESS,
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 });
@@ -107,7 +93,76 @@ io.on('connection', socket => {
   socket.on('revealAnswer', cards => onRevealAnswer(io, socket, GAMES[1]));
 
   socket.on('pickAnswer', cardId => onPickAnswer(io, socket, GAMES[1], cardId));
+
+  socket.on('resetGames', () => onResetGames(io, GAMES));
 });
+
+function createDecks(questions, answers) {
+  const questionDeckId = DECK_ID_TRACKER++;
+  GAMES[1].decks.questions = {
+    deckId: questionDeckId,
+    unused: CSVToDeck(questions, questionDeckId),
+    used: [],
+  };
+  shuffle(GAMES[1].decks.questions.unused);
+  GAMES[1].currentQuestion = GAMES[1].decks.questions.unused.pop();
+
+  const answerDeckId = DECK_ID_TRACKER++;
+  GAMES[1].decks.answers = {
+    deckId: answerDeckId,
+    unused: CSVToDeck(answers, answerDeckId),
+    used: [],
+  };
+  shuffle(GAMES[1].decks.answers.unused);
+}
+
+if (process.env.PASTEBIN_DEV_KEY) {
+  const pastebinUserResponse = await fetch(
+    'https://pastebin.com/api/api_login.php',
+    {
+      method: 'POST',
+      body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_name=${process.env.PASTEBIN_USERNAME}&api_user_password=${process.env.PASTEBIN_PASSWORD}`,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+  );
+  PASTEBIN_USER_KEY = await pastebinUserResponse.text();
+
+  const pastebinQuestionsResponse = await fetch(
+    'https://pastebin.com/api/api_raw.php',
+    {
+      method: 'POST',
+      body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_key=${PASTEBIN_USER_KEY}&api_paste_key=${process.env.PASTEBIN_QUESTIONS_KEY}&api_option=show_paste`,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+  );
+  const pastebinQuestions = await pastebinQuestionsResponse.text();
+
+  const pastebinAnswersResponse = await fetch(
+    'https://pastebin.com/api/api_raw.php',
+    {
+      method: 'POST',
+      body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_key=${PASTEBIN_USER_KEY}&api_paste_key=${process.env.PASTEBIN_ANSWERS_KEY}&api_option=show_paste`,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+  );
+  const pastebinAnswers = await pastebinAnswersResponse.text();
+
+  createDecks(pastebinQuestions, pastebinAnswers);
+} else {
+  fs.readFile('./questions_deck.csv', 'UTF-8', (err, questions) => {
+    if (err) {
+      return console.error(err);
+    }
+
+    fs.readFile('./answers_deck.csv', 'UTF-8', (err, answers) => {
+      if (err) {
+        return console.error(err);
+      }
+
+      createDecks(questions, answers);
+    });
+  });
+}
 
 // Saves games each minute
 // setInterval(function () {
@@ -130,61 +185,5 @@ io.on('connection', socket => {
 
 //   GAMES = JSON.parse(data);
 // });
-//
-const pastebinUserResponse = await fetch('https://pastebin.com/api/api_login.php', {
-  method: 'POST',
-  body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_name=${process.env.PASTEBIN_USERNAME}&api_user_password=${process.env.PASTEBIN_PASSWORD}`,
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-});
-PASTEBIN_USER_KEY = await pastebinUserResponse.text();
-
-const pastebinQuestionsResponse = await fetch('https://pastebin.com/api/api_raw.php', {
-  method: 'POST',
-  body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_key=${PASTEBIN_USER_KEY}&api_paste_key=${process.env.PASTEBIN_QUESTIONS_KEY}&api_option=show_paste`,
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-});
-const pastebinQuestions = await pastebinQuestionsResponse.text();
-
-const pastebinAnswersResponse = await fetch('https://pastebin.com/api/api_raw.php', {
-  method: 'POST',
-  body: `api_dev_key=${process.env.PASTEBIN_DEV_KEY}&api_user_key=${PASTEBIN_USER_KEY}&api_paste_key=${process.env.PASTEBIN_ANSWERS_KEY}&api_option=show_paste`,
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-});
-const pastebinAnswers = await pastebinAnswersResponse.text();
-
-// fs.readFile(process.env.QUESTIONS_DECK, 'UTF-8', (err, data) => {
-//   if (err) {
-//     return console.error(err);
-//   }
-
-const questionDeckId = DECK_ID_TRACKER++;
-
-GAMES[1].decks.questions = {
-  deckId: questionDeckId,
-  unused: CSVToDeck(pastebinQuestions, questionDeckId),
-  used: [],
-};
-
-shuffle(GAMES[1].decks.questions.unused);
-
-GAMES[1].currentQuestion = GAMES[1].decks.questions.unused.pop();
-// });
-
-// fs.readFile(process.env.ANSWERS_DECK, 'UTF-8', (err, data) => {
-//   if (err) {
-//     return console.error(err);
-//   }
-
-const answerDeckId = DECK_ID_TRACKER++;
-
-GAMES[1].decks.answers = {
-  deckId: answerDeckId,
-  unused: CSVToDeck(pastebinAnswers, answerDeckId),
-  used: [],
-};
-
-shuffle(GAMES[1].decks.answers.unused);
-// });
 
 console.log('ALL DATA LOADED');
-

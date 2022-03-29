@@ -1,7 +1,7 @@
 {
   "name": "cards-against-all",
   "description": "A player for games like cards against humanity",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "author": {
     "name": "Mauricio Araldi",

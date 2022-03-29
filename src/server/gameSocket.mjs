@@ -1,3 +1,5 @@
+import { shuffle } from './utils.mjs';
+
 const drawAnswerCards = (player, game, numberOfCards) => {
   const { unused } = game.decks.answers;
 
@@ -71,8 +73,8 @@ export const onChooseCards = (io, socket, game, cardIds) => {
   }
 
   const player = game.players[socket.id];
-  const playerHasCards = !cardIds.some(cardId =>
-    !player.hand.find(card => card.id === cardId)
+  const playerHasCards = !cardIds.some(
+    cardId => !player.hand.find(card => card.id === cardId)
   );
 
   if (!playerHasCards) {
@@ -173,4 +175,36 @@ export const onPickAnswer = (io, socket, game, cardId) => {
   game.master[0].socket.emit('master', true);
 
   io.emit('players', getPlayersWithStatus(game));
+};
+
+export const onResetGames = (io, games) => {
+  Object.entries(games).forEach(([id, game]) => {
+    games[id].decks.answers.unused.push(...games[id].decks.answers.used);
+    Object.values(games[id].players).forEach(player => {
+      games[id].decks.answers.unused.push(...player.hand);
+      games[id].decks.answers.unused.push(...player.choice.cards);
+    });
+
+    games[id].decks.questions.unused.push(...games[id].decks.questions.used);
+    games[id].decks.questions.unused.push(games[id].currentQuestion);
+
+    shuffle(games[id].decks.questions.unused);
+    shuffle(games[id].decks.answers.unused);
+
+    games[id] = {
+      players: {},
+      currentQuestion: games[id].decks.questions.unused.pop(),
+      master: [],
+      decks: {
+        answers: {
+          unused: games[id].decks.answers.unused,
+          used: [],
+        },
+        questions: {
+          unused: games[id].decks.questions.unused,
+          used: [],
+        },
+      },
+    };
+  });
 };
