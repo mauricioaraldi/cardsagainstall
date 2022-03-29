@@ -35,6 +35,10 @@ export class CaaRoot extends LitElement {
       display: none;
       margin-top: 200px;
     }
+
+    #other-options {
+      margin-top: 100px;
+    }
   `;
 
   onNavigate(ev: any) {

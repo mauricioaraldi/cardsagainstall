@@ -11,6 +11,8 @@ import {
   onRevealAnswer,
 } from './gameSocket.mjs';
 
+import { shuffle } from './utils.mjs';
+
 console.log('STARTING SERVER');
 
 let PASTEBIN_USER_KEY = null;
@@ -61,21 +63,6 @@ function CSVToDeck(data, deckId) {
       version: rawCard.slice(separatorPos + 1),
     };
   });
-}
-
-function shuffle(array) {
-  let currentIndex = array.length;
-  let randomIndex;
-
-  while (currentIndex != 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex],
-      array[currentIndex],
-    ];
-  }
 }
 
 function suffleDeck(deck) {
