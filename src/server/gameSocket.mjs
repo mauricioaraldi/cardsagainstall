@@ -33,6 +33,33 @@ const getPlayersWithStatus = game =>
   });
 
 export const onPlayerName = (io, socket, game, userName) => {
+  const prevPlayer = Object.values(game.players).find(player => player.name === userName);
+
+  if (prevPlayer && socket.handshake.address === prevPlayer.socket.handshake.address) {
+    delete game.players[prevPlayer.socket.id];
+
+    prevPlayer.socket = socket;
+
+    game.players[socket.id] = prevPlayer;
+
+    socket.emit(
+      'hand',
+      prevPlayer.hand.map(card => ({
+        id: card.id,
+        text: card.text,
+        version: card.version,
+      }))
+    );
+
+    socket.emit('players', getPlayersWithStatus(game));
+
+    if (game.master[0] === prevPlayer) {
+      socket.emit('master', true);
+    }
+
+    return;
+  }
+
   const player = {
     id: socket.id,
     socket,
