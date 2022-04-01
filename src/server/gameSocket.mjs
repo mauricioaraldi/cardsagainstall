@@ -32,7 +32,57 @@ const getPlayersWithStatus = game =>
     };
   });
 
-export const onPlayerName = (io, socket, game, userName) => {
+export const onChangeDevice = (io, socket, game) => {
+  game.players[socket.id].deviceCode = new Date().getTime().toString().slice(-4);
+  socket.emit('deviceCode', game.players[socket.id].deviceCode);
+};
+
+export const onPlayerName = (io, socket, game, payload) => {
+  const prevPlayer = Object.values(game.players).find(player => player.name === payload.userName);
+
+  if (prevPlayer) {
+    const isFromSameAddress = socket.handshake.address === prevPlayer.socket.handshake.address;
+    const deviceCodeMatch = payload.deviceCode === prevPlayer.deviceCode;
+
+    if ((prevPlayer.deviceCode || payload.deviceCode) && !deviceCodeMatch) {
+      socket.emit('error', `Device code not valid for player ${payload.userName}`);
+      return;
+    }
+
+    if (!isFromSameAddress && !deviceCodeMatch) {
+      socket.emit('error', 'Player name already exists');
+      return;
+    }
+
+    prevPlayer.deviceCode = null;
+
+    delete game.players[prevPlayer.socket.id];
+
+    prevPlayer.socket = socket;
+    prevPlayer.id = socket.id;
+
+    game.players[socket.id] = prevPlayer;
+
+    socket.emit(
+      'hand',
+      prevPlayer.hand.map(card => ({
+        id: card.id,
+        text: card.text,
+        version: card.version,
+      }))
+    );
+
+    socket.emit('players', getPlayersWithStatus(game));
+
+    if (game.master[0] === prevPlayer) {
+      socket.emit('master', true);
+    }
+
+    socket.emit('enterGame');
+
+    return;
+  }
+
   const player = {
     id: socket.id,
     socket,
@@ -40,9 +90,10 @@ export const onPlayerName = (io, socket, game, userName) => {
       revealed: false,
       cards: [],
     },
+    deviceCode: null,
     score: 0,
     gameId: 1,
-    name: userName,
+    name: payload.userName,
     hand: [],
   };
 
@@ -65,6 +116,8 @@ export const onPlayerName = (io, socket, game, userName) => {
   if (game.master.length === 1) {
     socket.emit('master', true);
   }
+
+  socket.emit('enterGame');
 };
 
 export const onChooseCards = (io, socket, game, cardIds) => {
