@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 import '../CaaCard/CaaCard';
+import '../CaaMenu/CaaMenu';
 
 @customElement('caa-game')
 export class CaaGame extends LitElement {
@@ -14,14 +15,25 @@ export class CaaGame extends LitElement {
   @property({ type: Array }) answers: any[] | null = null;
   @property({ type: Boolean }) master: boolean = false;
 
+  isShowingMenu: boolean = false;
+
   static styles = css`
     .hidden {
       display: none;
     }
 
+    aside {
+      display: flex;
+    }
+
+    #menu-button {
+      width: 40px;
+    }
+
     #players {
       background-color: #ffffff;
       border: 1px solid #000000;
+      flex-grow: 1;
       font-size: 10px;
       list-style-type: none;
       margin: 0;
@@ -219,6 +231,20 @@ export class CaaGame extends LitElement {
     this.dispatchEvent(event);
   }
 
+  onToggleMenu(menuState: boolean = !this.isShowingMenu) {
+    this.isShowingMenu = menuState;
+    this.requestUpdate();
+  }
+
+  onChangeDevice() {
+    const event = new CustomEvent('changeDevice', {
+      bubbles: true,
+      composed: true,
+    });
+
+    this.dispatchEvent(event);
+  }
+
   renderAnswers() {
     if (!this.answers) {
       return html``;
@@ -284,9 +310,12 @@ export class CaaGame extends LitElement {
         ></caa-card>
 
         <div id="main-container">
-          <ul id="players">
-            ${this.renderPlayers()}
-          </ul>
+          <aside>
+            <ul id="players">
+              ${this.renderPlayers()}
+            </ul>
+            <button id="menu-button" @click=${this.onToggleMenu}>+</button>
+          </aside>
 
           <div id="answers-container">
             <h2>${this.renderAnswerTitle()}</h2>
@@ -302,6 +331,12 @@ export class CaaGame extends LitElement {
             </ul>
           </div>
         </div>
+
+        <caa-menu
+          .show=${this.isShowingMenu}
+          @closeMenu=${() => this.onToggleMenu(false)}
+          @changeMenu=${() => this.onChangeDevice()}
+        ></caa-menu>
       </main>
     `;
   }

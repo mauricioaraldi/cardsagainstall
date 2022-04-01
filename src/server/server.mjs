@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import fetch from 'node-fetch';
 
 import {
+  onChangeDevice,
   onChooseCards,
   onPickAnswer,
   onPlayerName,
@@ -84,8 +85,8 @@ io.on('connection', socket => {
     version: GAMES[1].currentQuestion.version,
   });
 
-  socket.on('playerName', userName =>
-    onPlayerName(io, socket, GAMES[1], userName)
+  socket.on('playerName', payload =>
+    onPlayerName(io, socket, GAMES[1], payload)
   );
 
   socket.on('chooseCards', cards => onChooseCards(io, socket, GAMES[1], cards));
@@ -95,6 +96,8 @@ io.on('connection', socket => {
   socket.on('pickAnswer', cardId => onPickAnswer(io, socket, GAMES[1], cardId));
 
   socket.on('resetGames', () => onResetGames(io, GAMES));
+
+  socket.on('changeDevice', () => onChangeDevice(io, socket, GAMES[1]));
 });
 
 function createDecks(questions, answers) {

@@ -4,13 +4,13 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 import '../CaaGame/CaaGame';
-import '../CaaMenu/CaaMenu';
 
 @customElement('caa-root')
 export class CaaRoot extends LitElement {
   @property({ type: String }) title: string = 'Cards Against All';
   @property({ type: String }) currentPage: string = 'menu';
   @property({ type: String }) playerName: string = '';
+  @property({ type: String }) deviceCode: string = '';
   @property({ type: Array }) hand: Card[] = [];
   @property({ type: Object }) question?: Card;
   @property({ type: Boolean }) cardsLocked: boolean = false;
@@ -18,8 +18,10 @@ export class CaaRoot extends LitElement {
   @property({ type: Array }) answers: any[] | null = null;
   @property({ type: Boolean }) pickingAnswer: boolean = false;
   @property({ type: Boolean }) master: boolean = false;
+  @property({ type: Boolean }) isChangingDevice: boolean = false;
 
   // socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('ws://localhost:3000');
+  isAuthenticating: boolean = false;
   address: string = '@@ENV_BACK_END_ADDRESS@@';
   socket: any = io(
     this.address.includes('@@')
@@ -27,17 +29,29 @@ export class CaaRoot extends LitElement {
       : this.address
   );
   static styles = css`
+    main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    button,
     input {
       margin-bottom: 16px;
     }
 
+    #change-device-button {
+      background-color: none;
+      border: none;
+      text-decoration: underline;
+    }
+
     #upload-menu {
       display: none;
-      margin-top: 200px;
+      margin-top: 30px;
     }
 
     #other-options {
-      margin-top: 100px;
+      margin-top: 30px;
     }
   `;
 
@@ -46,13 +60,11 @@ export class CaaRoot extends LitElement {
   }
 
   onStart() {
-    this.socket.emit('playerName', this.playerName);
-
-    this.socket.on('hand', cards => {
-      this.hand = cards;
+    this.socket.emit('playerName', {
+      userName: this.playerName,
+      deviceCode: this.deviceCode,
     });
-
-    this.currentPage = 'game';
+    this.authenticating = true;
   }
 
   onChooseCards(ev) {
@@ -70,8 +82,12 @@ export class CaaRoot extends LitElement {
     this.socket.emit('pickAnswer', ev.detail.id);
   }
 
-  onReset(){
+  onReset() {
     this.socket.emit('resetGames');
+  }
+
+  onChangeDevice() {
+    this.socket.emit('changeDevice');
   }
 
   connectedCallback() {
@@ -96,6 +112,51 @@ export class CaaRoot extends LitElement {
       'pickAnswer',
       isPickingAnswer => (this.pickingAnswer = isPickingAnswer)
     );
+
+    this.socket.on('hand', cards => {
+      this.hand = cards;
+    });
+
+    this.socket.on('enterGame', () => {
+      this.currentPage = 'game';
+    });
+
+    this.socket.on('deviceCode', code => {
+      alert(`Use this code on new device: ${code}`);
+    });
+
+    this.socket.on('error', message => {
+      alert(message);
+    });
+  }
+
+  renderDeviceCode() {
+    if (!this.isChangingDevice) {
+      return html``;
+    }
+
+    return html`
+      <input
+        type="text"
+        name="name"
+        placeholder="Insert device code"
+        value="${this.deviceCode}"
+        @input=${e => (this.deviceCode = e.target.value)}
+      />
+    `;
+  }
+
+  renderDeviceCodeButton() {
+    if (this.isChangingDevice) {
+      html``;
+    }
+
+    return html`<button
+      id="change-device-button"
+      @click=${() => (this.isChangingDevice = true)}
+    >
+      Changing device?
+    </button>`;
   }
 
   renderPage() {
@@ -110,6 +171,7 @@ export class CaaRoot extends LitElement {
           .pickingAnswer=${this.pickingAnswer}
           .master=${this.master}
           @navigate=${this.onNavigate}
+          @changeDevice=${this.onChangeDevice}
           @chooseCards=${this.onChooseCards}
           @revealAnswer=${this.onRevealAnswer}
           @pickAnswer=${this.onPickAnswer}
@@ -117,29 +179,38 @@ export class CaaRoot extends LitElement {
 
       default:
         return html`
-          <h1>${this.title}</h1>
-          <input
-            type="text"
-            name="name"
-            placeholder="Your name"
-            value="${this.playerName}"
-            @change=${e => (this.playerName = e.target.value)}
-          />
-          <caa-menu
-            @navigate=${this.onNavigate}
-            @start=${this.onStart}
-          ></caa-menu>
+          <main>
+            <h1>${this.title}</h1>
+            <input
+              type="text"
+              name="name"
+              placeholder="Your name"
+              value="${this.playerName}"
+              @input=${e => (this.playerName = e.target.value)}
+            />
 
-          <div id="upload-menu">
-            <label>
-              <span>Upload deck</span>
-              <input type="file" />
-            </label>
-          </div>
+            ${this.renderDeviceCode()}
 
-          <div id="other-options">
-            <button @click=${this.onReset}>Reset games</button>
-          </div>
+            <button
+              ${this.isAuthenticating ? 'disabled' : ''}
+              @click=${this.onStart}
+            >
+              Start
+            </button>
+
+            ${this.renderDeviceCodeButton()}
+
+            <div id="upload-menu">
+              <label>
+                <span>Upload deck</span>
+                <input type="file" />
+              </label>
+            </div>
+
+            <div id="other-options">
+              <button @click=${this.onReset}>Reset games</button>
+            </div>
+          </main>
         `;
     }
   }
