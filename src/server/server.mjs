@@ -21,6 +21,7 @@ let GAMES = {
   1: {
     players: {},
     currentQuestion: null,
+    currentChoices: null,
     master: [],
     decks: {
       questions: {

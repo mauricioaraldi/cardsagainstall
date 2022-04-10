@@ -9,21 +9,26 @@ const drawAnswerCards = (player, game, numberOfCards) => {
 };
 
 const checkReadyToReveal = (io, game) => {
-  const players = Object.values(game.players);
-  const isEverybodyReady = !players.some(
-    player => !player.choice.cards.length && game.master[0].id !== player.id
+  const players = Object.values(game.players).filter(
+    player => game.master[0].id !== player.id
   );
+  const isEverybodyReady = !players.some(player => !player.choice.length);
 
   if (!isEverybodyReady) {
     return;
   }
 
-  io.emit('answers', new Array(players.length - 1).fill({}));
+  game.currentChoices = {
+    hidden: shuffle(players.map(player => player.choice)),
+    revealed: [],
+  };
+
+  io.emit('answers', new Array(players.length).fill({}));
 };
 
 const getPlayersWithStatus = game =>
   Object.values(game.players).map(player => {
-    const status = player.choice.cards.length ? 'ready' : 'choosing';
+    const status = player.choice.length ? 'ready' : 'choosing';
 
     return {
       name: player.name,
@@ -33,19 +38,28 @@ const getPlayersWithStatus = game =>
   });
 
 export const onChangeDevice = (io, socket, game) => {
-  game.players[socket.id].deviceCode = new Date().getTime().toString().slice(-4);
+  game.players[socket.id].deviceCode = new Date()
+    .getTime()
+    .toString()
+    .slice(-4);
   socket.emit('deviceCode', game.players[socket.id].deviceCode);
 };
 
 export const onPlayerName = (io, socket, game, payload) => {
-  const prevPlayer = Object.values(game.players).find(player => player.name === payload.userName);
+  const prevPlayer = Object.values(game.players).find(
+    player => player.name === payload.userName
+  );
 
   if (prevPlayer) {
-    const isFromSameAddress = socket.handshake.address === prevPlayer.socket.handshake.address;
+    const isFromSameAddress =
+      socket.handshake.address === prevPlayer.socket.handshake.address;
     const deviceCodeMatch = payload.deviceCode === prevPlayer.deviceCode;
 
     if ((prevPlayer.deviceCode || payload.deviceCode) && !deviceCodeMatch) {
-      socket.emit('error', `Device code not valid for player ${payload.userName}`);
+      socket.emit(
+        'error',
+        `Device code not valid for player ${payload.userName}`
+      );
       return;
     }
 
@@ -86,10 +100,7 @@ export const onPlayerName = (io, socket, game, payload) => {
   const player = {
     id: socket.id,
     socket,
-    choice: {
-      revealed: false,
-      cards: [],
-    },
+    choice: [],
     deviceCode: null,
     score: 0,
     gameId: 1,
@@ -138,7 +149,7 @@ export const onChooseCards = (io, socket, game, cardIds) => {
     const choosenCardIndex = player.hand.findIndex(card => card.id === id);
     const choosenCard = player.hand.splice(choosenCardIndex, 1);
 
-    player.choice.cards.push(...choosenCard);
+    player.choice.push(...choosenCard);
   });
 
   io.emit('players', getPlayersWithStatus(game));
@@ -153,33 +164,28 @@ export const onRevealAnswer = (io, socket, game) => {
     return;
   }
 
-  const choices = Object.values(game.players)
-    .filter(player => game.master[0].id !== player.id)
-    .map(player => player.choice);
-  const choiceToReveal = choices.find(choice => !choice.revealed);
-
-  if (!choiceToReveal) {
+  if (!game.currentChoices.hidden.length) {
     return;
   }
 
-  choiceToReveal.revealed = true;
+  game.currentChoices.revealed.push(game.currentChoices.hidden.pop());
 
-  if (!choices.find(choice => !choice.revealed)) {
+  if (!game.currentChoices.hidden.find(choice => !choice.revealed)) {
     game.master[0].socket.emit('pickAnswer');
   }
 
-  io.emit(
-    'answers',
-    choices.map(choice =>
-      choice.revealed
-        ? choice.cards.map(card => ({
-            id: card.id,
-            text: card.text,
-            version: card.version,
-          }))
-        : []
-    )
-  );
+  const choicesInOrder = [
+    ...game.currentChoices.revealed.map(choice =>
+      choice.map(card => ({
+        id: card.id,
+        text: card.text,
+        version: card.version,
+      }))
+    ),
+    ...game.currentChoices.hidden.map(choice => []),
+  ];
+
+  io.emit('answers', choicesInOrder);
 };
 
 export const onPickAnswer = (io, socket, game, cardId) => {
@@ -188,13 +194,12 @@ export const onPickAnswer = (io, socket, game, cardId) => {
   }
 
   Object.values(game.players).forEach(player => {
-    if (player.choice.cards.find(card => card.id === cardId)) {
+    if (player.choice.find(card => card.id === cardId)) {
       player.score++;
     }
 
-    game.decks.answers.used.push(...player.choice.cards);
-    player.choice.revealed = false;
-    player.choice.cards = [];
+    game.decks.answers.used.push(...player.choice);
+    player.choice = [];
 
     drawAnswerCards(player, game, 7 - player.hand.length);
 
@@ -207,6 +212,8 @@ export const onPickAnswer = (io, socket, game, cardId) => {
       }))
     );
   });
+
+  game.currentChoices = null;
 
   socket.emit('master', false);
   io.emit('cardsLocked', false);
@@ -235,7 +242,7 @@ export const onResetGames = (io, games) => {
     games[id].decks.answers.unused.push(...games[id].decks.answers.used);
     Object.values(games[id].players).forEach(player => {
       games[id].decks.answers.unused.push(...player.hand);
-      games[id].decks.answers.unused.push(...player.choice.cards);
+      games[id].decks.answers.unused.push(...player.choice);
     });
 
     games[id].decks.questions.unused.push(...games[id].decks.questions.used);
