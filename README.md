@@ -1,4 +1,4 @@
-# Cards Against All 0.3.1
+# Cards Against All 0.3.2
 
 [![Built with open-wc recommendations](https://img.shields.io/badge/built%20with-open--wc-blue.svg)](https://github.com/open-wc)
 
