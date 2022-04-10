@@ -33,28 +33,19 @@ const getPlayersWithStatus = game =>
   });
 
 export const onChangeDevice = (io, socket, game) => {
-  game.players[socket.id].deviceCode = new Date()
-    .getTime()
-    .toString()
-    .slice(-4);
+  game.players[socket.id].deviceCode = new Date().getTime().toString().slice(-4);
   socket.emit('deviceCode', game.players[socket.id].deviceCode);
 };
 
 export const onPlayerName = (io, socket, game, payload) => {
-  const prevPlayer = Object.values(game.players).find(
-    player => player.name === payload.userName
-  );
+  const prevPlayer = Object.values(game.players).find(player => player.name === payload.userName);
 
   if (prevPlayer) {
-    const isFromSameAddress =
-      socket.handshake.address === prevPlayer.socket.handshake.address;
+    const isFromSameAddress = socket.handshake.address === prevPlayer.socket.handshake.address;
     const deviceCodeMatch = payload.deviceCode === prevPlayer.deviceCode;
 
     if ((prevPlayer.deviceCode || payload.deviceCode) && !deviceCodeMatch) {
-      socket.emit(
-        'error',
-        `Device code not valid for player ${payload.userName}`
-      );
+      socket.emit('error', `Device code not valid for player ${payload.userName}`);
       return;
     }
 
@@ -165,16 +156,11 @@ export const onRevealAnswer = (io, socket, game) => {
   const choices = Object.values(game.players)
     .filter(player => game.master[0].id !== player.id)
     .map(player => player.choice);
-  const unrevealedChoices = choices.filter(choice => !choice.revealed);
+  const choiceToReveal = choices.find(choice => !choice.revealed);
 
-  if (!unrevealedChoices.length) {
+  if (!choiceToReveal) {
     return;
   }
-
-  const choiceToReveal =
-    unrevealedChoices[
-      Math.floor(Math.random() * (unrevealedChoices.length + 1))
-    ];
 
   choiceToReveal.revealed = true;
 
