@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import {
   onChangeDevice,
   onChooseCards,
+  onKickPlayer,
   onPickAnswer,
   onPlayerName,
   onResetGames,
@@ -21,6 +22,7 @@ let GAMES = {
   1: {
     players: {},
     currentQuestion: null,
+    currentChoices: null,
     master: [],
     decks: {
       questions: {
@@ -98,6 +100,8 @@ io.on('connection', socket => {
   socket.on('resetGames', () => onResetGames(io, GAMES));
 
   socket.on('changeDevice', () => onChangeDevice(io, socket, GAMES[1]));
+
+  socket.on('kickPlayer', playerName => onKickPlayer(io, socket, GAMES[1], playerName));
 });
 
 function createDecks(questions, answers) {

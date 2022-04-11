@@ -60,10 +60,16 @@ export class CaaRoot extends LitElement {
   }
 
   onStart() {
+    if (!this.playerName.trim()) {
+      alert('Invalid name');
+      return;
+    }
+
     this.socket.emit('playerName', {
-      userName: this.playerName,
+      userName: this.playerName.trim(),
       deviceCode: this.deviceCode,
     });
+
     this.authenticating = true;
   }
 
@@ -88,6 +94,10 @@ export class CaaRoot extends LitElement {
 
   onChangeDevice() {
     this.socket.emit('changeDevice');
+  }
+
+  onKickPlayer(ev) {
+    this.socket.emit('kickPlayer', ev.detail);
   }
 
   connectedCallback() {
@@ -127,6 +137,11 @@ export class CaaRoot extends LitElement {
 
     this.socket.on('error', message => {
       alert(message);
+    });
+
+    this.socket.on('kicked', () => {
+      alert('You have been kicked');
+      this.currentPage = 'menu';
     });
   }
 
@@ -170,9 +185,10 @@ export class CaaRoot extends LitElement {
           .answers=${this.answers}
           .pickingAnswer=${this.pickingAnswer}
           .master=${this.master}
-          @navigate=${this.onNavigate}
           @changeDevice=${this.onChangeDevice}
           @chooseCards=${this.onChooseCards}
+          @kickPlayer=${this.onKickPlayer}
+          @navigate=${this.onNavigate}
           @revealAnswer=${this.onRevealAnswer}
           @pickAnswer=${this.onPickAnswer}
         ></caa-game>`;
