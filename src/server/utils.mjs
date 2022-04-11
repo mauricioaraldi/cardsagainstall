@@ -11,4 +11,6 @@ export const shuffle = array => {
       array[currentIndex],
     ];
   }
+
+  return array;
 }
