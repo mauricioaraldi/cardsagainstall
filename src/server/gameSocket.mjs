@@ -51,6 +51,12 @@ export const onPlayerName = (io, socket, game, payload) => {
   );
 
   if (prevPlayer) {
+    console.log(
+      'TEST FOR PROD',
+      socket.handshake.address,
+      prevPlayer.socket.handshake.address
+    );
+
     const isFromSameAddress =
       socket.handshake.address === prevPlayer.socket.handshake.address;
     const deviceCodeMatch = payload.deviceCode === prevPlayer.deviceCode;
@@ -131,6 +137,70 @@ export const onPlayerName = (io, socket, game, payload) => {
   socket.emit('enterGame');
 };
 
+export const onKickPlayer = (io, socket, game, playerName) => {
+  if (!playerName) {
+    return;
+  }
+
+  const player = Object.values(game.players).find(
+    player => player.name === playerName
+  );
+
+  if (!player) {
+    return;
+  }
+
+  player.socket.emit('kicked');
+
+  game.decks.answers.unused.push(...player.hand);
+  game.decks.answers.unused.push(...player.choice);
+
+  if (game.master[0].id === player.id) {
+    game.master.push(game.master.shift());
+
+    game.master[0].socket.emit('master', true);
+
+    if (game.currentChoices) {
+      let choiceIndex = game.currentChoices.hidden.findIndex(
+        hiddenChoice => hiddenChoice[0].id === game.master[0].choice[0].id
+      );
+
+      if (choiceIndex > -1) {
+        game.currentChoices.hidden.splice(choiceIndex, 1);
+      } else {
+        choiceIndex = game.currentChoices.revealed.findIndex(
+          revealedChoice => revealedChoice[0].id === game.master[0].choice[0].id
+        );
+
+        if (choiceIndex > -1) {
+          game.currentChoices.revealed.splice(choiceIndex, 1);
+        }
+      }
+
+      io.emit('answers', [
+        ...game.currentChoices.revealed.map(choice =>
+          choice.map(card => ({
+            id: card.id,
+            text: card.text,
+            version: card.version,
+          }))
+        ),
+        ...game.currentChoices.hidden.map(choice => []),
+      ]);
+    }
+
+    game.master[0].hand.push(...game.master[0].choice);
+    game.master[0].choice = [];
+  }
+
+  const masterIndex = game.master.findIndex(master => master.id === player.id);
+  game.master.splice(masterIndex, 1);
+
+  delete game.players[player.id];
+
+  io.emit('players', getPlayersWithStatus(game));
+};
+
 export const onChooseCards = (io, socket, game, cardIds) => {
   if (cardIds.length > game.currentQuestion.pick) {
     return;
@@ -174,7 +244,7 @@ export const onRevealAnswer = (io, socket, game) => {
     game.master[0].socket.emit('pickAnswer');
   }
 
-  const choicesInOrder = [
+  io.emit('answers', [
     ...game.currentChoices.revealed.map(choice =>
       choice.map(card => ({
         id: card.id,
@@ -183,9 +253,7 @@ export const onRevealAnswer = (io, socket, game) => {
       }))
     ),
     ...game.currentChoices.hidden.map(choice => []),
-  ];
-
-  io.emit('answers', choicesInOrder);
+  ]);
 };
 
 export const onPickAnswer = (io, socket, game, cardId) => {

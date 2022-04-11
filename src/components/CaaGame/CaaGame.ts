@@ -245,6 +245,10 @@ export class CaaGame extends LitElement {
     this.dispatchEvent(event);
   }
 
+  onKickPlayer(ev: CustomEvent) {
+    this.dispatchEvent(ev);
+  }
+
   renderAnswers() {
     if (!this.answers) {
       return html``;
@@ -334,8 +338,10 @@ export class CaaGame extends LitElement {
 
         <caa-menu
           .show=${this.isShowingMenu}
+          .players=${this.players}
           @closeMenu=${() => this.onToggleMenu(false)}
           @changeMenu=${() => this.onChangeDevice()}
+          @kickPlayer=${this.onKickPlayer}
         ></caa-menu>
       </main>
     `;
