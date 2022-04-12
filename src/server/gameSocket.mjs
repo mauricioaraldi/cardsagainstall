@@ -50,15 +50,17 @@ export const onPlayerName = (io, socket, game, payload) => {
     player => player.name === payload.userName
   );
 
-  if (prevPlayer) {
-    console.log(
-      'TEST FOR PROD',
-      socket.handshake.address,
-      prevPlayer.socket.handshake.address
-    );
+  console.log('HEADER', socket.handshake.headers['x-forwarded-for']);
+  console.log('REMOTE', socket.conn.remoteAddress);
 
-    const isFromSameAddress =
-      socket.handshake.address === prevPlayer.socket.handshake.address;
+  if (prevPlayer) {
+    const ip =
+      socket.handshake.headers['x-forwarded-for'] ||
+      socket.conn.remoteAddress.split(':')[3];
+
+    console.log('TEST FOR PROD', prevPlayer.ip, 'CUR', ip);
+
+    const isFromSameAddress = ip === prevPlayer.ip;
     const deviceCodeMatch = payload.deviceCode === prevPlayer.deviceCode;
 
     if ((prevPlayer.deviceCode || payload.deviceCode) && !deviceCodeMatch) {
@@ -105,6 +107,9 @@ export const onPlayerName = (io, socket, game, payload) => {
 
   const player = {
     id: socket.id,
+    ip:
+      socket.handshake.headers['x-forwarded-for'] ||
+      socket.conn.remoteAddress.split(':')[3],
     socket,
     choice: [],
     deviceCode: null,
