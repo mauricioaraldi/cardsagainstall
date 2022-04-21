@@ -8,6 +8,10 @@ const drawAnswerCards = (player, game, numberOfCards) => {
   );
 };
 
+const isGameMaster = (socket, game) => {
+  return game.master[0].socket.id === socket.id;
+};
+
 const checkReadyToReveal = (io, game) => {
   const players = Object.values(game.players).filter(
     player => game.master[0].id !== player.id
@@ -38,16 +42,20 @@ const getPlayersWithStatus = game =>
   });
 
 export const onChangeDevice = (io, socket, game) => {
-  game.players[socket.id].deviceCode = new Date()
+  const player = Object.values(game.players).find(player => player.socket.id ===  socket.id);
+
+  game.players[player.id].deviceCode = new Date()
     .getTime()
     .toString()
     .slice(-4);
-  socket.emit('deviceCode', game.players[socket.id].deviceCode);
+
+  socket.emit('deviceCode', game.players[player.id].deviceCode);
 };
 
 export const onPlayerName = (io, socket, game, payload) => {
+  const newId = payload.userName.normalize();
   const prevPlayer = Object.values(game.players).find(
-    player => player.name === payload.userName
+    player => player.id === newId
   );
 
   if (prevPlayer) {
@@ -55,7 +63,8 @@ export const onPlayerName = (io, socket, game, payload) => {
       socket.handshake.headers['x-forwarded-for'] ||
       socket.conn.remoteAddress.split(':')[3];
 
-    const isFromSameAddress = ip === prevPlayer.ip;
+    const isFromSameAddress =
+      ip === prevPlayer.ip || prevPlayer.socket === null;
     const deviceCodeMatch = payload.deviceCode === prevPlayer.deviceCode;
 
     if ((prevPlayer.deviceCode || payload.deviceCode) && !deviceCodeMatch) {
@@ -73,12 +82,12 @@ export const onPlayerName = (io, socket, game, payload) => {
 
     prevPlayer.deviceCode = null;
 
-    delete game.players[prevPlayer.socket.id];
-
     prevPlayer.socket = socket;
-    prevPlayer.id = socket.id;
+    prevPlayer.ip =
+      socket.handshake.headers['x-forwarded-for'] ||
+      socket.conn.remoteAddress.split(':')[3];
 
-    game.players[socket.id] = prevPlayer;
+    game.players[prevPlayer.id] = prevPlayer;
 
     socket.emit(
       'hand',
@@ -101,7 +110,7 @@ export const onPlayerName = (io, socket, game, payload) => {
   }
 
   const player = {
-    id: socket.id,
+    id: newId,
     ip:
       socket.handshake.headers['x-forwarded-for'] ||
       socket.conn.remoteAddress.split(':')[3],
@@ -114,7 +123,7 @@ export const onPlayerName = (io, socket, game, payload) => {
     hand: [],
   };
 
-  game.players[socket.id] = player;
+  game.players[player.id] = player;
   game.master.push(player);
 
   drawAnswerCards(player, game, 7);
@@ -206,7 +215,9 @@ export const onChooseCards = (io, socket, game, cardIds) => {
     return;
   }
 
-  const player = game.players[socket.id];
+  const player = Object.values(game.players).find(
+    player => player.socket.id === socket.id
+  );
   const playerHasCards = !cardIds.some(
     cardId => !player.hand.find(card => card.id === cardId)
   );
@@ -230,7 +241,7 @@ export const onChooseCards = (io, socket, game, cardIds) => {
 };
 
 export const onRevealAnswer = (io, socket, game) => {
-  if (socket.id !== game.master[0].id) {
+  if (isGameMaster(socket, game)) {
     return;
   }
 

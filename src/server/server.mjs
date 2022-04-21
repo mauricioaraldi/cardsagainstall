@@ -15,7 +15,7 @@ import {
 
 import { shuffle } from './utils.mjs';
 
-console.log('STARTING SERVER');
+console.log('Starting server - -');
 
 let PASTEBIN_USER_KEY = null;
 let GAMES = {
@@ -101,7 +101,9 @@ io.on('connection', socket => {
 
   socket.on('changeDevice', () => onChangeDevice(io, socket, GAMES[1]));
 
-  socket.on('kickPlayer', playerName => onKickPlayer(io, socket, GAMES[1], playerName));
+  socket.on('kickPlayer', playerName =>
+    onKickPlayer(io, socket, GAMES[1], playerName)
+  );
 });
 
 function createDecks(questions, answers) {
@@ -172,25 +174,43 @@ if (process.env.PASTEBIN_DEV_KEY) {
 }
 
 // Saves games each minute
-// setInterval(function () {
-//   if (!Object.keys(GAMES).length) {
-//     return;
-//   }
+setInterval(function () {
+  if (!Object.keys(GAMES).length) {
+    return;
+  }
 
-//   fs.writeFile('games.json', JSON.stringify(GAMES), err => {
-//     if (err) {
-//       return console.error(err);
-//     }
-//     console.info('Games saved.');
-//   });
-// }, 60000);
+  const saveSafeGames = Object.entries(GAMES).reduce((acc, [id, game]) => {
+    acc[id] = {
+      ...game,
+      players: Object.entries(game.players).reduce((playerAcc, [playerId, player]) => {
+        playerAcc[playerId] = {
+          ...player,
+          socket: null,
+        };
 
-// fs.readFile('games.json', 'UTF-8', (err, data) => {
-//   if (err) {
-//     return console.error(err);
-//   }
+        return playerAcc;
+      }, {}),
+    };
 
-//   GAMES = JSON.parse(data);
-// });
+    return acc;
+  }, {});
 
-console.log('ALL DATA LOADED');
+  fs.writeFile('games.json', JSON.stringify(saveSafeGames), err => {
+    if (err) {
+      return console.error(err);
+    }
+    console.info('- Games saved');
+  });
+}, 60000);
+
+if (fs.existsSync('games.json')) {
+  fs.readFile('games.json', 'UTF-8', (err, data) => {
+    if (err) {
+      return console.error(err);
+    }
+
+    GAMES = JSON.parse(data);
+  });
+}
+
+console.log('- - All data loaded');
