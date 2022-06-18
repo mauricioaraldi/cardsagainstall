@@ -40,6 +40,9 @@ let CARD_ID_TRACKER = 1;
 let GAME_ID_TRACKER = 1;
 let DECK_ID_TRACKER = 1;
 
+const QUESTIONS_DECK_PATH = './questions_deck.csv';
+const ANSWERS_DECK_PATH = './answers_deck.csv';
+
 function CSVToDeck(data, deckId) {
   const THREE_PICK_EXCEPTIONS = ['haiku'];
 
@@ -123,7 +126,12 @@ function createDecks(questions, answers) {
   shuffle(GAMES[1].decks.answers.unused);
 }
 
-if (process.env.PASTEBIN_DEV_KEY) {
+if (
+  process.env.PASTEBIN_DEV_KEY
+  && (!fs.existsSync(QUESTIONS_DECK_PATH) || !fs.existsSync(ANSWERS_DECK_PATH))
+) {
+  console.log('Getting decks from PasteBin');
+
   const pastebinUserResponse = await fetch(
     'https://pastebin.com/api/api_login.php',
     {
@@ -154,14 +162,30 @@ if (process.env.PASTEBIN_DEV_KEY) {
   );
   const pastebinAnswers = await pastebinAnswersResponse.text();
 
-  createDecks(pastebinQuestions, pastebinAnswers);
-} else {
-  fs.readFile('./questions_deck.csv', 'UTF-8', (err, questions) => {
+  fs.writeFile(QUESTIONS_DECK_PATH, pastebinQuestions, err => {
     if (err) {
       return console.error(err);
     }
 
-    fs.readFile('./answers_deck.csv', 'UTF-8', (err, answers) => {
+    console.log('Questions deck saved locally');
+  });
+
+  fs.writeFile(ANSWERS_DECK_PATH, pastebinAnswers, err => {
+    if (err) {
+      return console.error(err);
+    }
+
+    console.log('Answers deck saved locally');
+  });
+
+  createDecks(pastebinQuestions, pastebinAnswers);
+} else {
+  fs.readFile(QUESTIONS_DECK_PATH, 'UTF-8', (err, questions) => {
+    if (err) {
+      return console.error(err);
+    }
+
+    fs.readFile(ANSWERS_DECK_PATH, 'UTF-8', (err, answers) => {
       if (err) {
         return console.error(err);
       }

@@ -3,6 +3,9 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
+import globalStyles from '../../globalStyles.js';
+import styleVars from '../../stylesVariables.js';
+
 import '../CaaGame/CaaGame';
 
 @customElement('caa-root')
@@ -28,32 +31,44 @@ export class CaaRoot extends LitElement {
       ? `http://${location.hostname}:3000`
       : this.address
   );
-  static styles = css`
-    main {
-      display: flex;
-      flex-direction: column;
-    }
+  static styles = [
+    globalStyles,
+    css`
+      main {
+        display: flex;
+        flex-direction: column;
+        padding: 0 ${styleVars.spacing.l};
+        margin: auto;
+        max-width: 480px;
+      }
 
-    button,
-    input {
-      margin-bottom: 16px;
-    }
+      button,
+      input {
+        margin-bottom: ${styleVars.spacing.xl};
+      }
 
-    #change-device-button {
-      background-color: none;
-      border: none;
-      text-decoration: underline;
-    }
+      #change-device-button {
+        background-color: none;
+        border: none;
+        text-decoration: underline;
+      }
 
-    #upload-menu {
-      display: none;
-      margin-top: 30px;
-    }
+      #upload-menu {
+        display: none;
+        margin-top: ${styleVars.spacing.l};
+      }
 
-    #other-options {
-      margin-top: 30px;
-    }
-  `;
+      #other-options {
+        position: absolute;
+        bottom: 0;
+        opacity: 0;
+      }
+
+      #other-options:hover {
+        opacity: 1;
+      }
+    `
+  ];
 
   onNavigate(ev: any) {
     this.currentPage = ev.detail;
@@ -174,6 +189,10 @@ export class CaaRoot extends LitElement {
     </button>`;
   }
 
+  onNameInput(e) {
+
+  }
+
   renderPage() {
     switch (this.currentPage) {
       case 'game':
@@ -203,6 +222,7 @@ export class CaaRoot extends LitElement {
               placeholder="Your name"
               value="${this.playerName}"
               @input=${e => (this.playerName = e.target.value)}
+              @keyup=${e => e.keyCode === 13 ? this.onStart() : ''}
             />
 
             ${this.renderDeviceCode()}

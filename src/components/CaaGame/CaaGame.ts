@@ -4,6 +4,9 @@ import { customElement, property } from 'lit/decorators.js';
 import '../CaaCard/CaaCard';
 import '../CaaMenu/CaaMenu';
 
+import globalStyles from '../../globalStyles.js';
+import styleVars from '../../stylesVariables.js';
+
 @customElement('caa-game')
 export class CaaGame extends LitElement {
   @property({ type: Array }) hand: Card[] = [];
@@ -31,35 +34,35 @@ export class CaaGame extends LitElement {
     }
 
     #players {
-      background-color: #ffffff;
-      border: 1px solid #000000;
+      background-color: ${styleVars.color.white};
+      border: 1px solid ${styleVars.color.black};
       flex-grow: 1;
-      font-size: 10px;
+      font-size: ${styleVars.font.xs};
       list-style-type: none;
       margin: 0;
       max-height: 50px;
       overflow: auto;
-      padding: 8px;
+      padding: ${styleVars.spacing.s};
       right: 0;
       text-align: left;
     }
 
     #players > li {
-      color: #00ff00;
+      color: ${styleVars.color.green};
       display: flex;
     }
 
     #players > li.choosing {
-      color: #ff0000;
+      color: ${styleVars.color.red};
     }
 
     #players > li:not(:last-child) {
-      margin-bottom: 4px;
+      margin-bottom: ${styleVars.spacing.xs};
     }
 
     #players > li > span {
       margin-left: auto;
-      padding-left: 4px;
+      padding-left: ${styleVars.spacing.xs};
     }
 
     #answers-container {
@@ -75,13 +78,13 @@ export class CaaGame extends LitElement {
     }
 
     #answers > div:not(:last-child) {
-      margin-right: 8px;
+      margin-right: ${styleVars.spacing.s};
     }
 
     h2 {
       display: block;
-      font-size: 12px;
-      margin: 4px 0;
+      font-size: ${styleVars.font.s};
+      margin: ${styleVars.spacing.xs} 0;
     }
 
     #hand-container {
@@ -96,7 +99,7 @@ export class CaaGame extends LitElement {
     #hand {
       display: flex;
       margin: 0;
-      padding: 8px;
+      padding: ${styleVars.spacing.s};
     }
 
     caa-card[question='true'] {
@@ -108,7 +111,7 @@ export class CaaGame extends LitElement {
     }
 
     .card-container:not(:last-child) {
-      margin-right: 8px;
+      margin-right: ${styleVars.spacing.s};
     }
 
     @media (min-width: 320px) {
@@ -124,14 +127,14 @@ export class CaaGame extends LitElement {
       }
 
       #players {
-        font-size: 16px;
+        font-size: ${styleVars.font.s};
         max-height: 300px;
         min-width: 180px;
       }
 
       #answers-container {
         overflow: auto;
-        padding: 8px;
+        padding: ${styleVars.spacing.s};
       }
     }
   `;

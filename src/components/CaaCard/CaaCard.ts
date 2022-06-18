@@ -1,6 +1,9 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
+import globalStyles from '../../globalStyles.js';
+import styleVars from '../../stylesVariables.js';
+
 @customElement('caa-card')
 export class CaaCard extends LitElement {
   @property({ type: Number }) selectedAs?: number;
@@ -12,35 +15,35 @@ export class CaaCard extends LitElement {
   static styles = css`
     .card {
       align-items: flex-start;
-      background: #F0F0F0;
-      border: 1px solid #000000;
+      background: ${styleVars.color.gray90};
+      border: 1px solid ${styleVars.color.black};
       cursor: pointer;
       display: flex;
-      font-size: 12px;
+      font-size: ${styleVars.font.l};
       flex-direction: column;
       justify-content: space-between;
-      padding: 8px;
+      padding: ${styleVars.spacing.s};
       position: relative;
     }
 
     .card[question="true"] {
-      background-color: #000000;
-      color: #F0F0F0;
+      background-color: ${styleVars.color.black};
+      color: ${styleVars.color.gray90};
     }
 
     .card[hidden="true"] {
-      background-color: #FFFFFF;
+      background-color: ${styleVars.color.white};
       height: 80px;
       width: 80px;
     }
 
     .card > span:last-child {
-      font-size: 6px;
+      font-size: ${styleVars.font.xs};
     }
 
     .selected-as {
-      background-color: #FF0000;
-      color: #F0F0F0;
+      background-color: ${styleVars.color.red};
+      color: ${styleVars.color.gray90};
       left: 0;
       padding: 2px 6px;
       position: absolute;
@@ -49,12 +52,8 @@ export class CaaCard extends LitElement {
 
     @media (min-width: 320px) {
       .card {
-        font-size: 18px;
+        font-size: ${styleVars.font.s};
         min-height: 80px;
-      }
-
-      .card > span:last-child {
-        font-size: 8px;
       }
     }
   `;
