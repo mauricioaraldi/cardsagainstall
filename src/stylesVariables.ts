@@ -9,11 +9,11 @@ export default {
     white: css`#FFFFFF`,
   },
   font: {
-    xs: css`12px`,
-    s: css`16px`,
-    m: css`20px`,
-    l: css`24px`,
-    xl: css`28px`,
+    xs: css`16px`,
+    s: css`20px`,
+    m: css`24px`,
+    l: css`28px`,
+    xl: css`32px`,
   },
   spacing: {
     xs: css`4px`,

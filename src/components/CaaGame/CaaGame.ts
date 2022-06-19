@@ -20,124 +20,126 @@ export class CaaGame extends LitElement {
 
   isShowingMenu: boolean = false;
 
-  static styles = css`
-    .hidden {
-      display: none;
-    }
-
-    aside {
-      display: flex;
-    }
-
-    #menu-button {
-      width: 40px;
-    }
-
-    #players {
-      background-color: ${styleVars.color.white};
-      border: 1px solid ${styleVars.color.black};
-      flex-grow: 1;
-      font-size: ${styleVars.font.xs};
-      list-style-type: none;
-      margin: 0;
-      max-height: 50px;
-      overflow: auto;
-      padding: ${styleVars.spacing.s};
-      right: 0;
-      text-align: left;
-    }
-
-    #players > li {
-      color: ${styleVars.color.green};
-      display: flex;
-    }
-
-    #players > li.choosing {
-      color: ${styleVars.color.red};
-    }
-
-    #players > li:not(:last-child) {
-      margin-bottom: ${styleVars.spacing.xs};
-    }
-
-    #players > li > span {
-      margin-left: auto;
-      padding-left: ${styleVars.spacing.xs};
-    }
-
-    #answers-container {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      justify-content: center;
-    }
-
-    #answers {
-      display: flex;
-      overflow: auto;
-    }
-
-    #answers > div:not(:last-child) {
-      margin-right: ${styleVars.spacing.s};
-    }
-
-    h2 {
-      display: block;
-      font-size: ${styleVars.font.s};
-      margin: ${styleVars.spacing.xs} 0;
-    }
-
-    #hand-container {
-      bottom: 0;
-      height: 150px;
-      left: 0;
-      overflow: auto;
-      position: absolute;
-      right: 0;
-    }
-
-    #hand {
-      display: flex;
-      margin: 0;
-      padding: ${styleVars.spacing.s};
-    }
-
-    caa-card[question='true'] {
-      display: inline-block;
-    }
-
-    .card-container {
-      list-style-type: none;
-    }
-
-    .card-container:not(:last-child) {
-      margin-right: ${styleVars.spacing.s};
-    }
-
-    @media (min-width: 320px) {
-      #hand-container {
-        height: 250px;
+  static styles = [
+    globalStyles,
+    css`
+      .hidden {
+        display: none;
       }
-    }
 
-    @media (min-width: 640px) {
-      #main-container {
+      aside {
         display: flex;
-        flex-direction: row-reverse;
+      }
+
+      #menu-button {
+        width: 40px;
       }
 
       #players {
-        font-size: ${styleVars.font.s};
-        max-height: 300px;
-        min-width: 180px;
+        background-color: ${styleVars.color.white};
+        border: 1px solid ${styleVars.color.black};
+        flex-grow: 1;
+        font-size: ${styleVars.font.xs};
+        list-style-type: none;
+        margin: 0;
+        max-height: 50px;
+        overflow: auto;
+        padding: ${styleVars.spacing.s};
+        right: 0;
+        text-align: left;
+      }
+
+      #players > li {
+        color: ${styleVars.color.green};
+        display: flex;
+      }
+
+      #players > li.choosing {
+        color: ${styleVars.color.red};
+      }
+
+      #players > li:not(:last-child) {
+        margin-bottom: ${styleVars.spacing.xs};
+      }
+
+      #players > li > span {
+        margin-left: auto;
+        padding-left: ${styleVars.spacing.xs};
       }
 
       #answers-container {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        justify-content: center;
+      }
+
+      #answers {
+        display: flex;
         overflow: auto;
+      }
+
+      #answers > div:not(:last-child) {
+        margin-right: ${styleVars.spacing.s};
+      }
+
+      #choose-button {
+        margin-top: ${styleVars.spacing.m};
+      }
+
+      h2 {
+        display: block;
+        font-size: ${styleVars.font.s};
+        margin: ${styleVars.spacing.xs} 0;
+      }
+
+      #hand-container {
+        bottom: 0;
+        left: 0;
+        overflow-x: auto;
+        position: absolute;
+        right: 0;
+      }
+
+      #hand {
+        display: flex;
+        margin: 0;
         padding: ${styleVars.spacing.s};
       }
-    }
-  `;
+
+      .card-container {
+        list-style-type: none;
+      }
+
+      .card-container:not(:last-child) {
+        margin-right: ${styleVars.spacing.s};
+      }
+
+      @media (min-width: 640px) {
+        #main-container {
+          display: flex;
+          flex-direction: row-reverse;
+        }
+
+        #question {
+          display: inline-block;
+          max-width: 420px;
+          margin: ${styleVars.spacing.s};
+        }
+
+        #players {
+          font-size: ${styleVars.font.s};
+          max-height: 300px;
+          min-width: 180px;
+        }
+
+        #answers-container {
+          overflow: auto;
+          padding: ${styleVars.spacing.s};
+        }
+      }
+    `
+  ];
 
   onSelectCard(card: Card) {
     if (this.cardsLocked) {
@@ -212,7 +214,7 @@ export class CaaGame extends LitElement {
       return html``;
     }
 
-    return html`<button @click=${this.onChooseCards}>Choose!</button>`;
+    return html`<button id="choose-button" @click=${this.onChooseCards}>Choose!</button>`;
   }
 
   onRevealAnswer() {
@@ -311,6 +313,7 @@ export class CaaGame extends LitElement {
     return html`
       <main>
         <caa-card
+          id="question"
           .question=${true}
           .text=${this.question?.text}
           .version=${this.question?.version}
@@ -332,6 +335,7 @@ export class CaaGame extends LitElement {
 
         <div class="${this.cardsLocked ? 'hidden' : ''}">
           ${this.renderChooseButton()}
+          
           <div id="hand-container">
             <ul id="hand">
               ${this.renderHand()}
